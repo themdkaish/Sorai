@@ -26,13 +26,15 @@ app.use('/api', musicRoutes);
 app.get('/api/test-yt-dlp', async (req, res) => {
   const { exec } = require('child_process');
   const ytDlpPath = process.env.YT_DLP_PATH || './yt-dlp';
+  const testVideo = 'BddP6PYo2gs';
   
-  exec(`${ytDlpPath} --version`, (error, stdout, stderr) => {
+  // Check version and available formats for a test video
+  exec(`${ytDlpPath} --cookies cookies.txt --list-formats https://www.youtube.com/watch?v=${testVideo}`, (error, stdout, stderr) => {
     res.json({
       workingDirectory: process.cwd(),
       ytDlpPath,
-      exists: require('fs').existsSync(ytDlpPath),
-      version: stdout ? stdout.trim() : null,
+      cookiesExists: require('fs').existsSync('cookies.txt'),
+      formats: stdout ? stdout.split('\n').slice(-20) : null, // Show last 20 formats
       error: error ? error.message : null,
       stderr: stderr || null
     });
