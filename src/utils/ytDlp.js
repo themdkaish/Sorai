@@ -9,8 +9,8 @@ function getAudioUrl(videoId) {
     const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
 
     // Get audio URL and metadata in JSON
-    // Using full path to ensure it's found even if not in the process PATH
-    const ytDlpPath = '/Library/Frameworks/Python.framework/Versions/3.14/bin/yt-dlp';
+    // Use './yt-dlp' which we will download on Render, or 'yt-dlp' from PATH
+    const ytDlpPath = process.env.YT_DLP_PATH || './yt-dlp';
     const cmd = `${ytDlpPath} -f bestaudio --no-playlist --no-warnings -j "${videoUrl}"`;
 
     exec(cmd, { timeout: 30000 }, (error, stdout, stderr) => {
