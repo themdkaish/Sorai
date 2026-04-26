@@ -11,8 +11,8 @@ function getAudioUrl(videoId) {
     // Get audio URL and metadata in JSON
     // Use './yt-dlp' which we will download on Render, or 'yt-dlp' from PATH
     const ytDlpPath = process.env.YT_DLP_PATH || './yt-dlp';
-    // Standard flags to look like a browser and bypass bot detection
-    const impersonateFlags = '--user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36" --referer "https://www.google.com/"';
+    // Advanced headers to mimic a real Chrome browser session
+    const impersonateFlags = '--user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36" --referer "https://www.youtube.com/" --add-header "Accept-Language: en-US,en;q=0.9" --add-header "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"';
     const cmd = `${ytDlpPath} ${impersonateFlags} -f bestaudio --no-playlist --no-warnings -j "${videoUrl}"`;
 
     exec(cmd, { timeout: 30000 }, (error, stdout, stderr) => {
