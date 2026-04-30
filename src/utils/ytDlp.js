@@ -51,7 +51,25 @@ function getAudioUrl(videoId) {
               exec(lastResortCmd, { timeout: 30000 }, (err3, stdout3) => {
                 if (err3) {
                   console.error('yt-dlp fallback 2 error:', err3.message);
-                  return reject(new Error('Failed to extract audio URL after multiple attempts. YouTube might be blocking the server IP.'));
+                  
+                  // Fallback 3: Super-robust Android-VR client (highest success rate on cloud)
+                  console.log('🛡️ Attempting super-fallback (Android-VR client)...');
+                  const superFallbackCmd = `${ytDlpPath} --extractor-args "youtube:player_client=android_vr" -f "ba/b" -g "${videoUrl}"`;
+                  
+                  exec(superFallbackCmd, { timeout: 30000 }, (err4, stdout4) => {
+                    if (err4) {
+                       console.error('yt-dlp super-fallback error:', err4.message);
+                       return reject(new Error('YouTube is blocking this server IP. Please try again later or use a different video.'));
+                    }
+                    resolve({
+                      streamUrl: stdout4.trim(),
+                      title: 'Unknown (Extracted via VR)',
+                      artist: 'Unknown',
+                      thumbnail: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+                      duration: 0,
+                    });
+                  });
+                  return;
                 }
                 resolve({
                   streamUrl: stdout3.trim(),
