@@ -59,14 +59,32 @@ function getAudioUrl(videoId) {
                 if (err3) {
                   console.error(`❌ yt-dlp fallback 2 error: ${err3.message}`);
                   
-                  // Fallback 3: Super-robust Android-VR client (highest success rate on cloud)
+                  // Fallback 3: Super-robust Android-VR client
                   console.log('🛡️ Attempting super-fallback (Android-VR client)...');
-                  const superFallbackCmd = `${ytDlpPath} --extractor-args "youtube:player_client=android_vr" -f "ba/b" -g "${videoUrl}"`;
+                  const superFallbackCmd = `${ytDlpPath} --force-ipv4 --extractor-args "youtube:player_client=android_vr" -f "ba/b" -g "${videoUrl}"`;
                   
                   exec(superFallbackCmd, { timeout: 30000 }, (err4, stdout4) => {
                     if (err4) {
-                       console.error('yt-dlp super-fallback error:', err4.message);
-                       return reject(new Error('YouTube is blocking this server IP. Please try again later or use a different video.'));
+                       console.error(`❌ yt-dlp super-fallback error: ${err4.message}`);
+                       
+                       // Fallback 4: YouTube TV (Cobalt) client - The "Nuclear" option
+                       console.log('☢️ Attempting nuclear-fallback (YouTube TV/Embedded clients)...');
+                       const nuclearCmd = `${ytDlpPath} --force-ipv4 --extractor-args "youtube:player_client=tv,web_embedded" -f "ba/b" -g "${videoUrl}"`;
+                       
+                       exec(nuclearCmd, { timeout: 30000 }, (err5, stdout5) => {
+                         if (err5) {
+                            console.error(`❌ yt-dlp nuclear-fallback error: ${err5.message}`);
+                            return reject(new Error('YouTube is blocking this server IP completely. Please try again later.'));
+                         }
+                         resolve({
+                           streamUrl: stdout5.trim(),
+                           title: 'Unknown (Extracted via TV)',
+                           artist: 'Unknown',
+                           thumbnail: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+                           duration: 0,
+                         });
+                       });
+                       return;
                     }
                     resolve({
                       streamUrl: stdout4.trim(),
