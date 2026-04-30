@@ -1,0 +1,8 @@
+[phases.setup]
+nixPkgs = ["nodePackages.npm", "python311", "nodejs"]
+
+[phases.install]
+cmds = ["npm install", "pip install yt-dlp"]
+
+[start]
+cmd = "npm start"
