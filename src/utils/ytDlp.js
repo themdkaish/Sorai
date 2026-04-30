@@ -10,8 +10,8 @@ function getAudioUrl(videoId) {
     const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
 
     // Get audio URL and metadata in JSON
-    // Use './yt-dlp' if it exists (common for portable installs), otherwise use system 'yt-dlp'
-    const ytDlpPath = fs.existsSync('./yt-dlp') ? './yt-dlp' : 'yt-dlp';
+    // Path to yt-dlp (installed via requirements.txt on Railway)
+    const ytDlpPath = 'yt-dlp';
     
     // Using cookies.txt and a flexible format selection (ba/b) to ensure playback
     const cookiesExist = fs.existsSync('cookies.txt');
