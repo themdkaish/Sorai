@@ -16,15 +16,28 @@ function getAudioUrl(videoId) {
     // Using cookies.txt and a flexible format selection (ba/b) to ensure playback
     const cookiesExist = fs.existsSync('cookies.txt');
     const cookiesFlag = cookiesExist ? '--cookies cookies.txt' : '';
-    const impersonateFlags = `${cookiesFlag} --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36" --referer "https://www.youtube.com/" --add-header "Accept-Language: en-US,en;q=0.9"`;
-    const cmd = `${ytDlpPath} ${impersonateFlags} -f "ba/b" --no-playlist --no-warnings -j "${videoUrl}"`;
+    
+    // Improved flags for cloud environments like Render:
+    // 1. player_client=ios,android,web: Bypasses some IP-based blocks
+    // 2. js-runtimes node: Uses the existing Node.js environment to solve signature challenges
+    const baseFlags = [
+      cookiesFlag,
+      '--user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"',
+      '--referer "https://www.youtube.com/"',
+      '--extractor-args "youtube:player_client=ios,android,web"',
+      '--js-runtimes node',
+      '--no-playlist',
+      '--no-warnings'
+    ].filter(Boolean).join(' ');
+
+    const cmd = `${ytDlpPath} ${baseFlags} -f "ba/b" -j "${videoUrl}"`;
 
     exec(cmd, { timeout: 30000 }, (error, stdout, stderr) => {
       if (error) {
         console.error('yt-dlp error:', error.message);
 
         // Fallback 1: try just getting the URL with current flags
-        const fallbackCmd = `${ytDlpPath} ${impersonateFlags} -f bestaudio -g --no-playlist --no-warnings "${videoUrl}"`;
+        const fallbackCmd = `${ytDlpPath} ${baseFlags} -f bestaudio -g "${videoUrl}"`;
         exec(fallbackCmd, { timeout: 30000 }, (err2, stdout2) => {
           if (err2) {
             console.error('yt-dlp fallback 1 error:', err2.message);
@@ -32,13 +45,13 @@ function getAudioUrl(videoId) {
             // Fallback 2: try WITHOUT cookies if they were used
             if (cookiesExist) {
               console.log('🔄 Attempting fallback without cookies...');
-              const noCookiesFlags = '--user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36" --referer "https://www.youtube.com/"';
-              const lastResortCmd = `${ytDlpPath} ${noCookiesFlags} -f "ba/b" -g --no-playlist --no-warnings "${videoUrl}"`;
+              const noCookiesFlags = baseFlags.replace('--cookies cookies.txt', '').trim();
+              const lastResortCmd = `${ytDlpPath} ${noCookiesFlags} -f "ba/b" -g "${videoUrl}"`;
               
               exec(lastResortCmd, { timeout: 30000 }, (err3, stdout3) => {
                 if (err3) {
                   console.error('yt-dlp fallback 2 error:', err3.message);
-                  return reject(new Error('Failed to extract audio URL after multiple attempts'));
+                  return reject(new Error('Failed to extract audio URL after multiple attempts. YouTube might be blocking the server IP.'));
                 }
                 resolve({
                   streamUrl: stdout3.trim(),
