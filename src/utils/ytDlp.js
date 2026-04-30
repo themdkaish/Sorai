@@ -34,23 +34,30 @@ function getAudioUrl(videoId) {
 
     exec(cmd, { timeout: 30000 }, (error, stdout, stderr) => {
       if (error) {
-        console.error('yt-dlp error:', error.message);
+        console.error(`❌ yt-dlp primary error: ${error.message}`);
+        if (stderr) console.error(`Stderr: ${stderr}`);
+
+        // Debug: Log all available formats to see what YouTube is offering
+        exec(`${ytDlpPath} -F "${videoUrl}"`, (fErr, fStdout) => {
+          console.log(`📋 Available formats for ${videoId}:\n${fStdout || 'None'}`);
+        });
 
         // Fallback 1: try just getting the URL with current flags
+        console.log('🔄 Attempting fallback 1 (get URL only)...');
         const fallbackCmd = `${ytDlpPath} ${baseFlags} -f bestaudio -g "${videoUrl}"`;
         exec(fallbackCmd, { timeout: 30000 }, (err2, stdout2) => {
           if (err2) {
-            console.error('yt-dlp fallback 1 error:', err2.message);
+            console.error(`❌ yt-dlp fallback 1 error: ${err2.message}`);
             
             // Fallback 2: try WITHOUT cookies if they were used
             if (cookiesExist) {
-              console.log('🔄 Attempting fallback without cookies...');
+              console.log('🔄 Attempting fallback 2 (no cookies)...');
               const noCookiesFlags = baseFlags.replace('--cookies cookies.txt', '').trim();
               const lastResortCmd = `${ytDlpPath} ${noCookiesFlags} -f "ba/b" -g "${videoUrl}"`;
               
               exec(lastResortCmd, { timeout: 30000 }, (err3, stdout3) => {
                 if (err3) {
-                  console.error('yt-dlp fallback 2 error:', err3.message);
+                  console.error(`❌ yt-dlp fallback 2 error: ${err3.message}`);
                   
                   // Fallback 3: Super-robust Android-VR client (highest success rate on cloud)
                   console.log('🛡️ Attempting super-fallback (Android-VR client)...');
